@@ -20,18 +20,28 @@ altitude: ${position.coords.altitude} m
 heading: ${position.coords.heading} deg
 speed: ${position.coords.speed} m/s`;
 
-  li.append(details)
-
+  li.append(details);
+  
   geoList.append(li);
-  // Scroll to bottom
-  window.scrollTo(0, document.body.scrollHeight)
+  window.scrollTo(0, 10000000)
 }
 
 if (navigator.geolocation) {
+  navigator.wakeLock.request();
   navigator.geolocation.watchPosition(getPosition, null, {
     enableHighAccuracy: true,
   });
 }
+
+// if (navigator.geolocation) {
+//   navigator.wakeLock.request();
+//   console.log(navigator.wakeLock.request())
+//   setInterval(() => {
+//     navigator.geolocation.getCurrentPosition(getPosition, null, {
+//       enableHighAccuracy: true,
+//     });
+//   }, 1000);
+// }
 
 const fileInput = document.getElementById("file");
 
