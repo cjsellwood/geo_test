@@ -36,9 +36,11 @@ function degToRad(degrees) {
   return Number(degrees) * (Math.PI / 180);
 }
 
+const runList = document.getElementById("run-list");
+
+const activities = [];
 fileInput.addEventListener("input", async (e) => {
   const files = e.target.files;
-  const activities = [];
   for (file of files) {
     const activity = await parseFile(file);
     activities.push(activity);
@@ -57,11 +59,13 @@ fileInput.addEventListener("input", async (e) => {
 
     // For each recording in an activity
     for (let i = 0; i < activity.records.length - 1; i++) {
+      // Change in elevation and time between 2 recordings
       activity.elevationChange.push(
         Number(activity.records[i + 1].ele) - Number(activity.records[i].ele)
       );
+      // Time in seconds
       activity.timeChange.push(
-        activity.records[i + 1].time - activity.records[i].time
+        (activity.records[i + 1].time - activity.records[i].time) / 1000
       );
 
       // Convert latitude and longitude to radians for calculations
@@ -89,12 +93,87 @@ fileInput.addEventListener("input", async (e) => {
       activity.distanceChange.push(c * r);
     }
 
+    // Calculate moving pace in s/km
+    activity.movingPace = [];
+    for (let i = 0; i < activity.timeChange.length; i++) {
+      activity.movingPace.push(
+        activity.timeChange[i] / activity.distanceChange[i]
+      );
+    }
+
+    // Calculate total time by summing time change
+    activity.totalTime = activity.timeChange.reduce((current, accumulator) => {
+      return accumulator + current;
+    });
+
     // Calculate total distance by summing distance changes
     activity.totalDistance = activity.distanceChange.reduce(
       (current, accumulator) => {
         return accumulator + current;
       }
     );
+
+    // Calculate cumulative distance at each point
+    activity.cumulativeDistance = [];
+    for (let i = 0; i < activity.distanceChange.length; i++) {
+      let sum = 0;
+      for (let j = 0; j < i; j++) {
+        sum += activity.distanceChange[j]
+      }
+      activity.cumulativeDistance.push(sum);
+    }
+
+    // Calculate average pace in s/km
+    activity.averagePace = activity.totalTime / activity.totalDistance;
   }
+
   console.log(activities);
+
+  // Append to runs list
+  for (let i = 0; i < activities.length; i++) {
+    const item = document.createElement("li");
+    item.textContent = `${activities[i].name} - ${activities[i].time}`;
+    item.setAttribute("data-index", i);
+    runList.append(item);
+  }
+});
+
+const runDetail = document.getElementById("run-detail");
+runList.addEventListener("click", function (e) {
+  const index = e.target.getAttribute("data-index");
+  // Remove previous details
+  while (runDetail.lastChild) {
+    runDetail.removeChild(runDetail.lastChild);
+  }
+  // Add details for selected
+  const title = document.createElement("h1");
+  title.textContent = `${activities[index].name} - ${activities[index].time}`;
+  runDetail.append(title);
+
+  const distance = document.createElement("p");
+  distance.textContent = `Distance: ${activities[index].totalDistance}`;
+  runDetail.append(distance);
+
+  const time = document.createElement("p");
+  time.textContent = `Time: ${activities[index].totalTime}`;
+  runDetail.append(time);
+
+  const pace = document.createElement("p");
+  pace.textContent = `Pace: ${activities[index].averagePace}`;
+  runDetail.append(pace);
+
+  // Create chart for pace over distance
+  const chartContainer = document.createElement("div");
+  chartContainer.classList.add("ct-chart")
+  chartContainer.classList.add("ct-perfect-fourth")
+  runDetail.append(chartContainer)
+  const data = {
+    // A labels array that can contain any sort of values
+    labels: activities[index].cumulativeDistance,
+    // Our series array that contains series objects or in this case series data arrays
+    series: [
+      activities[index].movingPace,
+    ]
+  };
+  new Chartist.Line(".ct-chart", data);
 });
