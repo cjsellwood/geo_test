@@ -23,6 +23,8 @@ speed: ${position.coords.speed} m/s`;
   li.append(details)
 
   geoList.append(li);
+  // Scroll to bottom
+  window.scrollTo(0, document.body.scrollHeight)
 }
 
 if (navigator.geolocation) {
