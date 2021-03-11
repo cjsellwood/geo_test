@@ -118,7 +118,7 @@ fileInput.addEventListener("input", async (e) => {
     for (let i = 0; i < activity.distanceChange.length; i++) {
       let sum = 0;
       for (let j = 0; j < i; j++) {
-        sum += activity.distanceChange[j]
+        sum += activity.distanceChange[j];
       }
       activity.cumulativeDistance.push(sum);
     }
@@ -164,16 +164,33 @@ runList.addEventListener("click", function (e) {
 
   // Create chart for pace over distance
   const chartContainer = document.createElement("div");
-  chartContainer.classList.add("ct-chart")
-  chartContainer.classList.add("ct-perfect-fourth")
-  runDetail.append(chartContainer)
+  chartContainer.classList.add("ct-chart");
+  chartContainer.classList.add("ct-perfect-fourth");
+  runDetail.append(chartContainer);
+
+  const series = [];
+  for (let i = 0; i < activities[index].cumulativeDistance.length; i++) {
+    series.push({
+      x: activities[index].cumulativeDistance[i],
+      y: activities[index].movingPace[i],
+    });
+  }
   const data = {
-    // A labels array that can contain any sort of values
-    labels: activities[index].cumulativeDistance,
-    // Our series array that contains series objects or in this case series data arrays
-    series: [
-      activities[index].movingPace,
-    ]
+    series: [series],
   };
-  new Chartist.Line(".ct-chart", data);
+
+  const ticks = [];
+  for (let i = 0; i < Math.round(activities[index].totalDistance) + 1; i++) {
+    ticks.push(i);
+  }
+  const options = {
+    axisX: {
+      type: Chartist.FixedScaleAxis,
+      onlyInteger: true,
+      ticks: ticks,
+      low: 0,
+      high: activities[index].totalDistance,
+    },
+  };
+  new Chartist.Line(".ct-chart", data, options);
 });
